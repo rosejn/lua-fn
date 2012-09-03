@@ -9,5 +9,5 @@ Originally started with functional.lua, but slowly expanding as needed.
     double = fn.partial(mul, 2)
     double(10)  --> 20
 
-    map(double, {1,2,3}) --> {2, 4, 6}
+    fn.map(double, {1,2,3}) --> {2, 4, 6}
 ~

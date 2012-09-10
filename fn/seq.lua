@@ -1,9 +1,14 @@
+require 'torch'
+require 'util'
+require 'fn'
+
 seq = {}
 
 --------------------------------
 -- functions of maps
 --------------------------------
 
+-- Return a sequence of the keys of table t.
 function seq.keys(t)
   local k, v
   return function()
@@ -13,11 +18,27 @@ function seq.keys(t)
 end
 
 
+-- Return a sequence of the values in table or tensor t.  If a tensor is passed
+-- then only the first dimension is indexed, so you might need to flatten it if
+-- you want to iterate of items of a multi-dimensional tensor.
 function seq.vals(t)
   local k, v
-  return function()
-    k, v = next(t, k)
-    return v
+  if util.is_table(t) then
+      return function()
+          k, v = next(t, k)
+          return v
+      end
+  elseif util.is_tensor(t) then
+      local i = 0
+      local n = (#t)[1]
+      return function()
+          i = i + 1
+          if i <= n then
+              return t[i]
+          else
+              return nil
+          end
+      end
   end
 end
 
@@ -26,14 +47,31 @@ end
 -- functions of sequences
 --------------------------------
 
+
+-- Returns a sequence iterator function that will return the successive values
+-- of s.  If passed a function (e.g. an existing iterator), it just returns it
+-- back, and if passed nil returns an empty iterator (returns nil on first
+-- call.)
 function seq.seq(s)
     if type(s) == 'function' then
         return s
     elseif s == nil then
-        return function() return nil end
+        return function()
+            return nil
+        end
     else
         return seq.vals(s)
     end
+end
+
+
+-- Returns the elements of sequence s in a table.
+function seq.table(s)
+    local tbl = {}
+    for elem in s do
+        fn.append(tbl, elem)
+    end
+    return tbl
 end
 
 
@@ -50,54 +88,102 @@ function seq.take(s, n)
 end
 
 
+-- Returns successive elements of s as long as pred(element) returns true.
 function seq.take_while(pred, s)
-end
-
-
-function seq.drop_while(pred, s)
-end
-
-
--- An iterator that successively returns n elements of an indexable object (table, tensor,
--- dataset) in shuffled order.
-function seq.shuffle(dataset, n)
-    local shuffle = torch.randperm(n)
-    local i = 0
-
+    s = seq.seq(s)
     return function()
-        i = i + 1
-        if i <= n then
-            return dataset[shuffle[i]]
+        if pred(s()) then
+            return s()
         end
-    end
-end
-
-
--- An iterator that takes an iterator, and partitions its elements in
--- chunks of size, returning a full partition on each call.
-function seq.partition(stream, size)
-    return function()
-        local i = 0
-        local vals = {}
-
-        repeat
-            local v = stream()
-            if v == nil then
-                break
-            else
-                fn.append(vals, v)
-            end
-            i = i + 1
-        until i == size
-        return vals
     end
 end
 
 
 -- Returns a seq without the first n elements of s.
 function seq.drop(s, n)
+    s = seq.seq(s)
     for i=1,n do s() end
     return s
+end
+
+
+-- Drops successive elements of s as long as pred(element) returns true,
+-- and then returns the rest of the sequence.
+function seq.drop_while(pred, s)
+    s = seq.seq(s)
+    return function()
+        while pred(s()) do
+        end
+        return s
+    end
+end
+
+
+-- Returns successive pairs of (index, element), starting with one.
+function seq.indexed(s)
+    local i = 0
+    s = seq.seq(s)
+
+    return function()
+        local elem = s()
+        if elem then
+            i = i + 1
+            return i, elem
+        else
+            return nil
+        end
+    end
+end
+
+
+-- Successively returns n elements of an indexable object (table, tensor,
+-- dataset) in shuffled order.  The object must either support the # operator
+-- or have a .size() function available to get the full size.
+function seq.shuffle(s)
+    local n
+
+    -- TODO: This is a bit of a hack because Lua doesn't currently support
+    -- the __len method on tables.  With Lua 5.2 this can be removed.
+    if type(s.size) == 'function' then
+        n = s.size()
+    else
+        n = #s
+    end
+
+    local shuffle = torch.randperm(n)
+    local i = 0
+
+    return function()
+        i = i + 1
+        if i <= n then
+            return s[shuffle[i]]
+        end
+    end
+end
+
+
+-- Returns the elements of s in groups of partition size n.
+function seq.partition(s, n)
+    return function()
+        local i = 0
+        local vals = {}
+
+        repeat
+            local v = s()
+            if v == nil then
+                break
+            else
+                fn.append(vals, v)
+                i = i + 1
+            end
+        until i == n
+
+        if i == 0 then
+            return nil
+        else
+            return vals
+        end
+    end
 end
 
 

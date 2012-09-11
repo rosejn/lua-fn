@@ -1,3 +1,5 @@
+require('util')
+
 -- Short-hand operator functions for use in map, filter, reduce...
 fn = {
     mod = math.mod;
@@ -161,21 +163,34 @@ function fn.partial(f, ...)
     end
 end
 
+--[[
+  apply(f, args..., tbl)
 
--- apply(f, args..., tbl)
--- Call function f, args as the arguments, with the values in tbl appended to
--- the argument list.
--- e.g.
---   apply(print, {"foo", "bar"})
---   apply(print, "testing", "one", "two", {"foo", "bar"})
+  Call function f, passing args as the arguments, with the values in tbl appended to
+  the argument list.
+
+   e.g.
+     function compute(m, x, b)
+       return m * x + b
+     end
+
+     -- apply a list of args to a function
+     fn.apply(compute, {2, 3, 4})
+
+     -- prepend some args to the list that is applied
+     fn.apply(compute, 2, {3, 4})
+     fn.apply(compute, 2, 3, {4})
+]]
 function fn.apply(f, ...)
     local pargs = {}
-    if arg.n > 1 then
-        for i=1, (arg.n - 1) do
-            fn.append(pargs, arg[i])
+    local args = {...}
+    if #args > 1 then
+        for i=1, (#args - 1) do
+            fn.append(pargs, args[i])
         end
     end
-    return f(unpack(concat(pargs, arg[arg.n])))
+    local full_args = util.concat(pargs, args[#args])
+    return f(unpack(full_args))
 end
 
 

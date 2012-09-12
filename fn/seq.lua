@@ -76,7 +76,7 @@ end
 
 
 -- Returns a seq of the first n values of s.
-function seq.take(s, n)
+function seq.take(n, s)
     local i = 0
     s = seq.seq(s)
     return function()
@@ -163,7 +163,7 @@ end
 
 
 -- Returns the elements of s in groups of partition size n.
-function seq.partition(s, n)
+function seq.partition(n, s)
     return function()
         local i = 0
         local vals = {}
@@ -225,9 +225,19 @@ function seq.concat(...)
 end
 
 
+-- seq.repeat_val(v)
+-- seq.repeat_val(n, v)
+--
 -- Repeat v infinitely, or n times if n is passed.
-function seq.repeat_val(v, n)
-    if n then
+-- e.g.
+--   seq.repeat_val(10)    -- => {10, 10, 10, 10, ...}
+--   seq.repeat_val(3, 42) -- => {42, 42, 42}
+function seq.repeat_val(...)
+    local args = {...}
+    if #args == 2 then
+        local n = args[1]
+        local v = args[2]
+
         local i = 0
         return function()
             if i < n then
@@ -235,6 +245,7 @@ function seq.repeat_val(v, n)
             end
         end
     else
+        local v = args[1]
         return function()
             return v
         end

@@ -151,7 +151,7 @@ function fn.bind2(func, val2)
 function fn.partial(f, ...)
     local pargs = {...}
     return function(...)
-        args = {}
+        local args = {}
         for _,v in ipairs(pargs) do
             fn.append(args, v)
         end

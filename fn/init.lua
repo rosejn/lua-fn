@@ -16,6 +16,14 @@ fn = {
     ne  = function(n,m) return n ~= m end;
 }
 
+function fn.inc(v)
+    return v + 1
+end
+
+function fn.dec(v)
+    return v - 1
+end
+
 ------------------------------------------------------------
 -- Treating tables as sequences
 -----------------------------------------------------------

@@ -24,9 +24,17 @@ end
 function seq.vals(t)
   local k, v
   if util.is_table(t) then
+      local has_ended = false
       return function()
-          k, v = next(t, k)
-          return v
+          if has_ended then
+              return nil
+          else
+              k, v = next(t, k)
+              if k == nil then
+                  has_ended = true
+              end
+              return v
+          end
       end
   elseif util.is_tensor(t) then
       local i = 0
@@ -75,6 +83,14 @@ function seq.table(s)
 end
 
 
+-- Returns a tensor containing the sequence s.
+-- NOTE: since a tensor must be allocated in advance, we have to first
+-- realize the sequence in a table, and then write it into a tensor.
+function seq.tensor(s)
+    return torch.Tensor(seq.table(s))
+end
+
+
 -- Returns a seq of the first n values of s.
 function seq.take(n, s)
     local i = 0
@@ -92,15 +108,16 @@ end
 function seq.take_while(pred, s)
     s = seq.seq(s)
     return function()
-        if pred(s()) then
-            return s()
+        local v = s()
+        if pred(v) then
+            return v
         end
     end
 end
 
 
 -- Returns a seq without the first n elements of s.
-function seq.drop(s, n)
+function seq.drop(n, s)
     s = seq.seq(s)
     for i=1,n do s() end
     return s
@@ -111,10 +128,18 @@ end
 -- and then returns the rest of the sequence.
 function seq.drop_while(pred, s)
     s = seq.seq(s)
+    local dropped_all = false
     return function()
-        while pred(s()) do
+        if dropped_all then
+            return s()
+        else
+            local v
+            repeat
+                v = s()
+            until not pred(v)
+            dropped_all = true
+            return v
         end
-        return s
     end
 end
 
@@ -164,6 +189,8 @@ end
 
 -- Returns the elements of s in groups of partition size n.
 function seq.partition(n, s)
+    s = seq.seq(s)
+
     return function()
         local i = 0
         local vals = {}
@@ -182,6 +209,34 @@ function seq.partition(n, s)
             return nil
         else
             return vals
+        end
+    end
+end
+
+
+-- range(), range(end), range(start, end), range(start, end, step)
+function seq.range(...)
+    local start = 1
+    local n = nil
+    local step = 1
+    local args = {...}
+
+    if #args == 1 then
+        n = args[1]
+    elseif #args == 2 then
+        start = args[1]
+        n = args[2]
+    elseif #args == 3 then
+        start = args[1]
+        n = args[2]
+        step = args[3]
+    end
+
+    return function()
+        local v = start
+        start = start + step
+        if n == nil or v <= n then
+            return v
         end
     end
 end
@@ -257,7 +312,7 @@ end
 -- f(), f(), f()...
 function seq.repeatedly(f)
     return function()
-        f()
+        return f()
     end
 end
 
@@ -266,7 +321,7 @@ end
 function seq.iterate(f, x)
     local v = x
     return function()
-        v = f(x)
+        v = f(v)
         return v
     end
 end
@@ -284,6 +339,8 @@ function seq.map(f, s)
 end
 
 
+-- Returns a sequence of the concatenation of applying f to each value
+-- in s.  (Expects that f returns a seq.)
 function seq.mapcat(f, s)
     s = seq.map(f, s)
     local cur = seq.seq(s())
@@ -292,7 +349,7 @@ function seq.mapcat(f, s)
         if v then
             return v
         else
-            local new = args()
+            local new = s()
             if new then
                 cur = seq.seq(new)
                 if cur then
@@ -304,6 +361,7 @@ function seq.mapcat(f, s)
 end
 
 
+-- Filter out values of s for which pred(v) returns false.
 function seq.filter(pred, s)
     s = seq.seq(s)
     return function()
@@ -320,6 +378,9 @@ function seq.filter(pred, s)
 end
 
 
+-- Reduce sequence s using function f(mem, v), which should be a function of two args,
+-- the memory and the next value.  The mem argument is the initial value of
+-- mem passed to f.
 function seq.reduce(f, mem, s)
     s = seq.seq(s)
     for v in s do
@@ -329,6 +390,7 @@ function seq.reduce(f, mem, s)
 end
 
 
+-- Creates a new sequence by interleaving elements from multiple sequences.
 function seq.interleave(...)
     local args = {...}
     local n = #args
@@ -361,33 +423,3 @@ function seq.interpose(sep, s)
         end
     end
 end
-
-
--- range(), range(end), range(start, end), range(start, end, step)
-function seq.range(...)
-    local start = 0
-    local n = nil
-    local step = 1
-    local args = {...}
-
-    if #args == 1 then
-        n = args[1]
-    elseif #args == 2 then
-        start = args[1]
-        n = args[2]
-    elseif #args == 3 then
-        start = args[1]
-        n = args[2]
-        step = args[3]
-    end
-
-    return function()
-        local v = start
-        start = start + step
-        if n == nil or v < n then
-            return v
-        end
-    end
-end
-
-

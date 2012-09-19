@@ -8,8 +8,8 @@ fn = {
     sub = function(n,m) return n - m end;
     mul = function(n,m) return n * m end;
     div = function(n,m) return n / m end;
-    gt  = function(n,m) return n > m end;
-    lt  = function(n,m) return n < m end;
+    gt  = function(n,m) return m > n end;
+    lt  = function(n,m) return m < n end;
     eq  = function(n,m) return n == m end;
     le  = function(n,m) return n <= m end;
     ge  = function(n,m) return n >= m end;
@@ -93,7 +93,7 @@ end
 -- Returns a new table without the first n elements of tbl
 function fn.drop(n, tbl)
     local new_tbl = {}
-    for i=n, #tbl do
+    for i=n+1, #tbl do
         fn.append(new_tbl, tbl[i])
     end
     return new_tbl
@@ -111,9 +111,9 @@ end
 --      if the condition was expected then true, else false.  Helpful
 --      for filtering and other functions that take a predicate.
 -- @example
---      local is_table = is(type, "table")
---      local is_even = is(bind2(math.mod, 2), 1)
---      local is_odd = is(bind2(math.mod, 2), 0)
+--      local is_table = fn.is(type, "table")
+--      local is_even =  fn.is(fn.partial(math.mod, 2), 1)
+--      local is_odd =   fn.is(fn.partial(math.mod, 2), 0)
 function fn.is(check, expected)
     return function (...)
         if (check(unpack(...)) == expected) then
@@ -124,34 +124,15 @@ function fn.is(check, expected)
     end
 end
 
--- curry(f,g)
--- e.g: printf = curry(io.write, string.format)
+-- comp(f,g)
+-- Returns a function that is the composition of functions f and g: f(g(...))
+-- e.g: printf = comp(io.write, string.format)
 --          -> function(...) return io.write(string.format(unpack(arg))) end
-function fn.curry(f,g)
+function fn.comp(f,g)
     return function (...)
         return f(g(unpack(arg)))
     end
 end
-
--- bind1(f, arg)
--- Bind an argument and generate a new function
- -- @examples
- --      local mul5 = bind1(operator.mul, 5) -- mul5(10) is 5 * 10
- --      local sub2 = bind2(operator.sub, 2) -- sub2(5) is 5 -2
-function fn.bind1(func, val1)
-    return function (val2)
-        return func(val1, val2)
-    end
-end
-
-
--- bind2(func, binding_value_for_2nd)
--- bind second argument.
-function fn.bind2(func, val2)
-     return function (val1)
-         return func(val1, val2)
-     end
- end
 
 -- partial(f, args)
 -- Returns a new function, which will call f with args and any additional
@@ -217,9 +198,9 @@ end
  -- e.g: filter(is_even, {1,2,3,4}) -> {2,4}
  function fn.filter(func, tbl)
      local newtbl= {}
-     for i,v in pairs(tbl) do
+     for i,v in ipairs(tbl) do
          if func(v) then
-         newtbl[i]=v
+             fn.append(newtbl, v)
          end
      end
      return newtbl

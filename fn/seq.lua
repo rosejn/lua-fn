@@ -4,9 +4,10 @@ require 'fn'
 
 seq = {}
 
---------------------------------
--- functions of maps
---------------------------------
+---------------------------------------------
+-- sequences to and from tables and tensors
+---------------------------------------------
+
 
 -- Return a sequence of the keys of table t.
 function seq.keys(t)
@@ -51,11 +52,6 @@ function seq.vals(t)
 end
 
 
---------------------------------
--- functions of sequences
---------------------------------
-
-
 -- Returns a sequence iterator function that will return the successive values
 -- of s.  If passed a function (e.g. an existing iterator), it just returns it
 -- back, and if passed nil returns an empty iterator (returns nil on first
@@ -90,6 +86,11 @@ function seq.tensor(s)
     return torch.Tensor(seq.table(s))
 end
 
+
+
+--------------------------------
+-- sequence operators
+--------------------------------
 
 -- Returns a seq of the first n values of s.
 function seq.take(n, s)
@@ -214,51 +215,6 @@ function seq.partition(n, s)
 end
 
 
--- range(), range(end), range(start, end), range(start, end, step)
-function seq.range(...)
-    local start = 1
-    local n = nil
-    local step = 1
-    local args = {...}
-
-    if #args == 1 then
-        n = args[1]
-    elseif #args == 2 then
-        start = args[1]
-        n = args[2]
-    elseif #args == 3 then
-        start = args[1]
-        n = args[2]
-        step = args[3]
-    end
-
-    return function()
-        local v = start
-        start = start + step
-        if n == nil or v <= n then
-            return v
-        end
-    end
-end
-
-
--- Return an infinite sequence of the elements in s, starting
--- back at the beginning when reaching the end.
-function seq.cycle(s)
-    local the_seq = s
-    local cur = seq.seq(s)
-    return function()
-        local v = cur()
-        if v then
-            return v
-        else
-            cur = seq.seq(s)
-            return cur()
-        end
-    end
-end
-
-
 -- Concatenate two or more sequences.
 function seq.concat(...)
     local args = seq.seq({...})
@@ -276,53 +232,6 @@ function seq.concat(...)
                 end
             end
         end
-    end
-end
-
-
--- seq.repeat_val(v)
--- seq.repeat_val(n, v)
---
--- Repeat v infinitely, or n times if n is passed.
--- e.g.
---   seq.repeat_val(10)    -- => {10, 10, 10, 10, ...}
---   seq.repeat_val(3, 42) -- => {42, 42, 42}
-function seq.repeat_val(...)
-    local args = {...}
-    if #args == 2 then
-        local n = args[1]
-        local v = args[2]
-
-        local i = 0
-        return function()
-            if i < n then
-                return v
-            end
-        end
-    else
-        local v = args[1]
-        return function()
-            return v
-        end
-    end
-end
-
-
--- Takes a function of no args, and returns a sequence of
--- f(), f(), f()...
-function seq.repeatedly(f)
-    return function()
-        return f()
-    end
-end
-
-
--- Returns a sequences of f(x), f(f(x)), ...
-function seq.iterate(f, x)
-    local v = x
-    return function()
-        v = f(v)
-        return v
     end
 end
 
@@ -422,4 +331,135 @@ function seq.interpose(sep, s)
             end
         end
     end
+end
+
+
+--------------------------------
+-- sequence generators
+--------------------------------
+
+-- Return an infinite sequence of the elements in s, starting
+-- back at the beginning when reaching the end.
+function seq.cycle(s)
+    local the_seq = s
+    local cur = seq.seq(s)
+    return function()
+        local v = cur()
+        if v then
+            return v
+        else
+            cur = seq.seq(s)
+            return cur()
+        end
+    end
+end
+
+
+-- seq.repeat_val(v)
+-- seq.repeat_val(n, v)
+--
+-- Repeat v infinitely, or n times if n is passed.
+-- e.g.
+--   seq.repeat_val(10)    -- => {10, 10, 10, 10, ...}
+--   seq.repeat_val(3, 42) -- => {42, 42, 42}
+function seq.repeat_val(...)
+    local args = {...}
+    if #args == 2 then
+        local n = args[1]
+        local v = args[2]
+
+        local i = 0
+        return function()
+            if i < n then
+                return v
+            end
+        end
+    else
+        local v = args[1]
+        return function()
+            return v
+        end
+    end
+end
+
+
+-- Takes a function of no args, and returns a sequence of
+-- f(), f(), f()...
+function seq.repeatedly(f)
+    return function()
+        return f()
+    end
+end
+
+
+-- Returns a sequences of f(x), f(f(x)), ...
+function seq.iterate(f, x)
+    local v = x
+    return function()
+        v = f(v)
+        return v
+    end
+end
+
+
+--------------------------------
+-- generating numeric sequences
+--------------------------------
+
+-- Returns a sequence beginning at zero or start, incrementing by step until
+-- reaching the end.
+-- e.g.
+--   range(), range(end), range(start, end), range(start, end, step)
+function seq.range(...)
+    local start = 1
+    local n = nil
+    local step = 1
+    local args = {...}
+
+    if #args == 1 then
+        n = args[1]
+    elseif #args == 2 then
+        start = args[1]
+        n = args[2]
+    elseif #args == 3 then
+        start = args[1]
+        n = args[2]
+        step = args[3]
+    end
+
+    return function()
+        local v = start
+        start = start + step
+        if n == nil or v <= n then
+            return v
+        end
+    end
+end
+
+
+-- Returns a linear seq from start to stop with n steps.
+function seq.lin(start, stop, n)
+  local step    = (stop - start) / (n - 1)
+  local stepper = seq.range(start, stop, step)
+  return seq.take(n, stepper)
+end
+
+
+-- Returns an exponential (powers of 2) seq from start to stop with n steps.
+function seq.exp(start, stop, n)
+  local dist    = stop - start
+  local step    = 10.0 / (n - 2)
+  local scale   = dist / math.pow(2, 10.0)
+  local stepper = seq.map(function(x) return start + scale * math.pow(2, x * step) end, seq.range(n))
+  return seq.concat({start}, seq.take(n-2, stepper))
+end
+
+
+-- Returns a logarithmic (base 2) seq from start to stop with n steps.
+function seq.log(start, stop, n)
+  local dist    = stop - start
+  local step    = 10.0 / (n - 2)
+  local scale   = dist / (math.log(10.0) / math.log(2))
+  local stepper = seq.map(function(x) return start + scale * (math.log(x * step) / math.log(2)) end, seq.range(n))
+  return seq.concat({start}, seq.take(n-2, stepper))
 end

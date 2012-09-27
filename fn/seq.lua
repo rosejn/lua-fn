@@ -1,5 +1,5 @@
 require 'torch'
-require 'util'
+require 'util/queue'
 require 'fn'
 
 seq = {}
@@ -300,10 +300,13 @@ end
 
 
 -- Creates a new sequence by interleaving elements from multiple sequences.
+-- e.g.
+--   interleave({1,1,1}, {2,2,2})   -- => {1,2,1,2,1,2}
 function seq.interleave(...)
     local args = {...}
     local n = #args
     args = seq.cycle(seq.map(seq.seq, args))
+
     return function()
         local s = args()
         if s then
@@ -339,16 +342,20 @@ end
 --------------------------------
 
 -- Return an infinite sequence of the elements in s, starting
--- back at the beginning when reaching the end.
+-- back at the beginning when reaching the end.  Note that the whole
+-- sequence will be resident in memory.
+-- e.g.
+--   seq.take(10, seq.cycle({1,2,3}))   -- => {1,2,3,1,2,3,1,2,3,1}
 function seq.cycle(s)
-    local the_seq = s
-    local cur = seq.seq(s)
+    local the_seq = seq.table(seq.seq(s))
+    local cur = seq.seq(the_seq)
+
     return function()
         local v = cur()
         if v then
             return v
         else
-            cur = seq.seq(s)
+            cur = seq.seq(the_seq)
             return cur()
         end
     end
@@ -383,11 +390,30 @@ function seq.repeat_val(...)
 end
 
 
--- Takes a function of no args, and returns a sequence of
--- f(), f(), f()...
-function seq.repeatedly(f)
-    return function()
-        return f()
+-- Takes a function of no args, and returns an infinite (or size n) sequence
+-- of f()s.
+-- repeatedly(f), repeatedly(n, f)
+-- e.g.
+--   seq.repeatedly(function() return math.random() end)
+--   seq.repeatedly(10, function() return math.random() end)
+function seq.repeatedly(...)
+    local args = {...}
+    local f, n
+    if #args == 1 then
+        f = args[1]
+    elseif #args == 2 then
+        n = args[1]
+        f = args[2]
+    else
+        error("Invalid number of args to seq.repeatedly.")
+    end
+
+    local res = function() return f() end
+
+    if n then
+        return seq.take(n, res)
+    else
+        return res
     end
 end
 
@@ -399,6 +425,43 @@ function seq.iterate(f, x)
         v = f(v)
         return v
     end
+end
+
+
+-- Replicate a sequence across n identical sequences.  Note, that if one of the
+-- replicas pulls data faster than others it can result in growing amounts of
+-- memory.
+-- e.g.
+--   tee({1,2,3,4})      -- => {1,2,3,4}, {1,2,3,4}
+--   tee({1,2,3,4}, 4)   -- => {1,2,3,4}, {1,2,3,4}, {1,2,3,4}, {1,2,3,4}
+function seq.tee(s, n)
+    s = seq.seq(s)
+    n = n or 2
+
+    local queues = seq.table(seq.repeatedly(n, function() return queue.new() end))
+
+    local feeder = function(my_q)
+        if queue.is_empty(my_q) then
+            local v = s()
+
+            if v then
+                for q in seq.seq(queues) do
+                    queue.push_right(q, v)
+                end
+            end
+        end
+        return queue.pop_left(my_q)
+    end
+
+    return unpack(seq.table(seq.map(function(q) return fn.partial(feeder, q) end, queues)))
+end
+
+
+-- Returns a map with keys mapped to corresponding vals.
+-- e.g.
+--   zipmap({1,2,3}, {'a', 'b', 'c'})     -- => {1 = 'a', 2 = 'b', 3 = 'c'}
+function seq.zipmap(keys, vals)
+
 end
 
 

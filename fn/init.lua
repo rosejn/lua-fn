@@ -218,3 +218,25 @@ end
      return val
  end
 
+
+-- zip(table, table)
+-- e.g.
+--    zip({1,2,3}, {'a', 'b', 'c'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
+--    zip({1,2,3}, {'a', 'b', 'c', 'd'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
+function fn.zip(tblA, tblB)
+	local len = math.max(#tblA, #tblB)
+	local newtbl = {}
+	for i = 1,len do
+		table.insert(newtbl, {tblA[i], tblB[i]})
+	end
+	return newtbl
+end
+
+
+-- zipWith(function, table, table)
+-- e.g.:
+--   zipWith(fn.add, {1,2,3}, {1,2,3}) -> {2,4,6}
+--   zipWith(fn.add, {1,2,3}, {1,2,3,4}) -> {2,4,6}
+function fn.zipWith(func, tblA, tblB)
+	return fn.map(function(x) return func(unpack(x)) end, fn.zip(tblA, tblB))
+end

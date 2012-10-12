@@ -35,8 +35,8 @@ function tests.test_fns()
     local foo = function(a, b, c) return a + b + c end
     local twox = function(v) return v * 2 end
 
-    local comp = fn.comp(twox, foo)
-    tester:asserteq(12, comp(1, 2, 3), "compose two functions")
+    local comped = fn.comp(twox, foo)
+    tester:asserteq(12, comped(1, 2, 3), "compose two functions")
 
     local adder = fn.partial(foo, 1, 2)
     tester:asserteq(6, adder(3), "partial application of arguments")

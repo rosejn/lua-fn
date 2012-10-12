@@ -124,15 +124,17 @@ function fn.is(check, expected)
     end
 end
 
+
 -- comp(f,g)
 -- Returns a function that is the composition of functions f and g: f(g(...))
 -- e.g: printf = comp(io.write, string.format)
 --          -> function(...) return io.write(string.format(unpack(arg))) end
 function fn.comp(f,g)
     return function (...)
-        return f(g(unpack(arg)))
+        return f(g(...))
     end
 end
+
 
 -- partial(f, args)
 -- Returns a new function, which will call f with args and any additional
@@ -219,6 +221,19 @@ end
  end
 
 
+-- Returns a map with keys mapped to corresponding vals.
+-- e.g.
+--   zipmap({1,2,3}, {'a', 'b', 'c'})     -- => {1 = 'a', 2 = 'b', 3 = 'c'}
+function fn.zipmap(keys, vals)
+    local m = {}
+    for i, key in ipairs(keys) do
+        m[key] = vals[i]
+    end
+
+    return m
+end
+
+
 -- zip(table, table)
 -- e.g.
 --    zip({1,2,3}, {'a', 'b', 'c'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
@@ -240,3 +255,5 @@ end
 function fn.zip_with(func, tblA, tblB)
 	return fn.map(function(x) return func(unpack(x)) end, fn.zip(tblA, tblB))
 end
+
+

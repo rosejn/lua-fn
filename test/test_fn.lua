@@ -44,6 +44,15 @@ function tests.test_fns()
     tester:asserteq(6, fn.apply(foo, {1, 2, 3}), "apply a fn to a table of args")
     tester:asserteq(6, fn.apply(foo, 1, 2, {3}), "apply a fn to a table of args")
     tester:asserteq(6, fn.apply(foo, 1, {2, 3}), "apply a fn to a table of args")
+
+	do
+		local res = fn.zip_with(fn.add, {1,2,3}, {1,2,3})
+		tester:assertTableEq(res, {2,3,6}, "zip_with addition of tables of equal length")
+	end
+	do
+		local res = fn.zip_with(fn.add, {1,2,3,4}, {1,2,3})
+		tester:assertTableEq(res, {2,3,6}, "zip_with addition of tables of equal length")
+	end
 end
 
 

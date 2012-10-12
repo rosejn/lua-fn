@@ -234,3 +234,26 @@ function fn.zipmap(keys, vals)
 end
 
 
+-- zip(table, table)
+-- e.g.
+--    zip({1,2,3}, {'a', 'b', 'c'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
+--    zip({1,2,3}, {'a', 'b', 'c', 'd'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
+function fn.zip(tblA, tblB)
+	local len = math.min(#tblA, #tblB)
+	local newtbl = {}
+	for i = 1,len do
+		table.insert(newtbl, {tblA[i], tblB[i]})
+	end
+	return newtbl
+end
+
+
+-- zip_with(function, table, table)
+-- e.g.:
+--   zip_with(fn.add, {1,2,3}, {1,2,3}) -> {2,4,6}
+--   zip_with(fn.add, {1,2,3}, {1,2,3,4}) -> {2,4,6}
+function fn.zip_with(func, tblA, tblB)
+	return fn.map(function(x) return func(unpack(x)) end, fn.zip(tblA, tblB))
+end
+
+

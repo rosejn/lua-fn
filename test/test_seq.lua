@@ -2,25 +2,30 @@ require 'fn'
 require 'fn/seq'
 
 
-function tests.test_map_fns()
-    local coll = {a = 1, b = 2, c = 3}
-
-    local keys = seq.keys(coll)
-    tester:assertTableEq(seq.table(keys), {'a', 'b', 'c'}, "test keys")
-
-    local vals = seq.vals(coll)
-    tester:assertTableEq(seq.table(vals), {1, 2, 3}, "test keys")
-end
-
-
 function tests.test_realizers()
     local coll = {a = 1, b = 2, c = 3}
-
-    tester:assertTableEq(seq.table(seq.keys(coll)), {'a', 'b', 'c'}, "test seq.table")
+    local res = seq.table(seq.keys(coll))
+    table.sort(res)
+    tester:assertTableEq(res, {'a', 'b', 'c'}, "test seq.table")
     -- TODO: can't really test seq.tensor like this because we can't guarantee
     -- the order that seq.vals will produce values...
     --tester:assertTensorEq(seq.tensor(coll), torch.Tensor({1, 2, 3}), 0,
     --                      "create a tensor from a seq")
+end
+
+
+function tests.test_map_fns()
+    local coll = {a = 1, b = 2, c = 3}
+
+    local keys = seq.keys(coll)
+    local res = seq.table(keys)
+    table.sort(res)
+    tester:assertTableEq(res, {'a', 'b', 'c'}, "test keys")
+
+    local vals = seq.vals(coll)
+    local res = seq.table(vals)
+    table.sort(res)
+    tester:assertTableEq(res, {1, 2, 3}, "test keys")
 end
 
 

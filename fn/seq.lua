@@ -457,14 +457,6 @@ function seq.tee(s, n)
 end
 
 
--- Returns a map with keys mapped to corresponding vals.
--- e.g.
---   zipmap({1,2,3}, {'a', 'b', 'c'})     -- => {1 = 'a', 2 = 'b', 3 = 'c'}
-function seq.zipmap(keys, vals)
-
-end
-
-
 --------------------------------
 -- generating numeric sequences
 --------------------------------

@@ -233,10 +233,10 @@ function fn.zip(tblA, tblB)
 end
 
 
--- zipWith(function, table, table)
+-- zip_with(function, table, table)
 -- e.g.:
---   zipWith(fn.add, {1,2,3}, {1,2,3}) -> {2,4,6}
---   zipWith(fn.add, {1,2,3}, {1,2,3,4}) -> {2,4,6}
-function fn.zipWith(func, tblA, tblB)
+--   zip_with(fn.add, {1,2,3}, {1,2,3}) -> {2,4,6}
+--   zip_with(fn.add, {1,2,3}, {1,2,3,4}) -> {2,4,6}
+function fn.zip_with(func, tblA, tblB)
 	return fn.map(function(x) return func(unpack(x)) end, fn.zip(tblA, tblB))
 end

@@ -239,7 +239,7 @@ end
 --    zip({1,2,3}, {'a', 'b', 'c'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
 --    zip({1,2,3}, {'a', 'b', 'c', 'd'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
 function fn.zip(tblA, tblB)
-	local len = math.max(#tblA, #tblB)
+	local len = math.min(#tblA, #tblB)
 	local newtbl = {}
 	for i = 1,len do
 		table.insert(newtbl, {tblA[i], tblB[i]})

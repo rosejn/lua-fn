@@ -375,12 +375,9 @@ function seq.repeat_val(...)
         local n = args[1]
         local v = args[2]
 
-        local i = 0
-        return function()
-            if i < n then
-                return v
-            end
-        end
+        return seq.take(n, function()
+            return v
+        end)
     else
         local v = args[1]
         return function()

@@ -86,6 +86,11 @@ function tests.test_infinite()
     tester:assertTableEq(seq.table(geom_seq), {2,4,8,16}, "iterate with 2 x v")
 end
 
+function tests.test_flattening()
+    local nested = {1, 2, 3, {4, 5, {6, 7}}}
+    tester:assertTableEq(seq.table(seq.flatten(nested)), {1,2,3,4,3,6}, "flatten a nested sequence")
+end
+
 function tests.test_mapping()
     local dubla = function(v) return 2 * v end
     local mapped = seq.map(dubla, seq.range(4))
@@ -107,7 +112,7 @@ function tests.reduce()
     tester:asserteq(reduced, 15, "reduce a by addition")
 end
 
-function tests.interweave()
+function tests.weave()
     local woven = seq.interleave({1,1,1,1}, {2,2,2,2})
     tester:assertTableEq(seq.table(woven), {1,2,1,2,1,2,1,2}, "interleave 1's and 2's")
 

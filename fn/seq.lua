@@ -4,6 +4,14 @@ require 'fn'
 
 seq = {}
 
+
+-- A boolean predicate returning true if s can be treated
+-- as a sequence (i.e. an iterator function, table, or tensor)
+function seq.is_seq(s)
+    return util.is_fn(s) or util.is_table(s) or util.is_tensor(s)
+end
+
+
 ---------------------------------------------
 -- sequences to and from tables and tensors
 ---------------------------------------------
@@ -235,6 +243,33 @@ function seq.concat(...)
     end
 end
 
+-- Return the contents of a nested sequence.
+function seq.flatten(s)
+    local stack = {}
+    local cur = seq.seq(s)
+    local flattener
+
+    flattener = function()
+        local v = cur()
+        if seq.is_seq(v) then
+            table.insert(stack, cur)
+            cur = seq.seq(v)
+            return flattener()
+        elseif v == nil then
+            if #stack == 0 then
+                return nil
+            else
+                cur = table.remove(stack)
+                return flattener()
+            end
+        else
+            return v
+        end
+    end
+
+    return flattener
+end
+
 
 -- Return a new sequence of f applied to each value of s.
 function seq.map(f, s)
@@ -347,15 +382,15 @@ end
 -- e.g.
 --   seq.take(10, seq.cycle({1,2,3}))   -- => {1,2,3,1,2,3,1,2,3,1}
 function seq.cycle(s)
-    local the_seq = seq.table(seq.seq(s))
-    local cur = seq.seq(the_seq)
+    local head = s
+    local cur = seq.seq(head)
 
     return function()
         local v = cur()
         if v then
             return v
         else
-            cur = seq.seq(the_seq)
+            cur = seq.seq(head)
             return cur()
         end
     end
@@ -458,7 +493,7 @@ end
 -- generating numeric sequences
 --------------------------------
 
--- Returns a sequence beginning at zero or start, incrementing by step until
+-- Returns a sequence beginning at one or start, incrementing by step until
 -- reaching the end.
 -- e.g.
 --   range(), range(end), range(start, end), range(start, end, step)

@@ -8,7 +8,7 @@ seq = {}
 -- A boolean predicate returning true if s can be treated
 -- as a sequence (i.e. an iterator function, table, or tensor)
 function seq.is_seq(s)
-    return util.is_fn(s) or util.is_table(s)
+    return util.is_fn(s) or (util.is_table(s) and #s > 0)
 end
 
 

@@ -154,6 +154,19 @@ function fn.partial(f, ...)
     end
 end
 
+
+-- thread(value, f, ...)
+function fn.thread(val, ...)
+    local functions = {...}
+
+    for _, fun in ipairs(functions) do
+        val = fun(val)
+    end
+
+    return val
+end
+
+
 --[[
   apply(f, args..., tbl)
 

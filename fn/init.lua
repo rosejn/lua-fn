@@ -24,6 +24,11 @@ function fn.dec(v)
     return v - 1
 end
 
+function fn.id(v)
+	return v
+end
+
+
 ------------------------------------------------------------
 -- Treating tables as sequences
 -----------------------------------------------------------

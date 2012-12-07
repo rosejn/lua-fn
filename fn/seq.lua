@@ -125,6 +125,19 @@ function seq.take_while(pred, s)
 end
 
 
+-- Returns every nth element of s.
+function seq.take_nth(n, s)
+    s = seq.seq(s)
+    return function()
+        local v
+        for i=1,n do
+            v = s()
+        end
+        return v
+    end
+end
+
+
 -- Returns a seq without the first n elements of s.
 function seq.drop(n, s)
     s = seq.seq(s)
@@ -242,6 +255,7 @@ function seq.concat(...)
         end
     end
 end
+
 
 -- Return the contents of a nested sequence.
 function seq.flatten(s)

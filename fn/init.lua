@@ -28,6 +28,10 @@ function fn.id(v)
 	return v
 end
 
+function fn.const(x)
+	return function() return x end
+end
+
 
 ------------------------------------------------------------
 -- Treating tables as sequences

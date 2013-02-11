@@ -240,7 +240,8 @@ end
 function seq.concat(...)
     local args = seq.seq({...})
     local cur = seq.seq(args())
-    return function()
+    local concatter
+    concatter = function()
         local v = cur()
         if v then
             return v
@@ -248,12 +249,12 @@ function seq.concat(...)
             local new = args()
             if new then
                 cur = seq.seq(new)
-                if cur then
-                    return cur()
-                end
+                return concatter()
             end
         end
     end
+
+    return concatter
 end
 
 
@@ -302,7 +303,8 @@ end
 function seq.mapcat(f, s)
     s = seq.map(f, s)
     local cur = seq.seq(s())
-    return function()
+    local catter
+    catter = function()
         local v = cur()
         if v then
             return v
@@ -310,12 +312,12 @@ function seq.mapcat(f, s)
             local new = s()
             if new then
                 cur = seq.seq(new)
-                if cur then
-                    return cur()
-                end
+                return catter()
             end
         end
     end
+
+    return catter
 end
 
 

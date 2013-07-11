@@ -260,11 +260,11 @@ end
 -- e.g.
 --    zip({1,2,3}, {'a', 'b', 'c'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
 --    zip({1,2,3}, {'a', 'b', 'c', 'd'}) -> {{1,'a'}, {2,'b'}, {3,'c'}}
-function fn.zip(tblA, tblB)
-	local len = math.min(#tblA, #tblB)
+function fn.zip(tbl_a, tbl_b)
+	local len = math.min(#tbl_a, #tbl_b)
 	local newtbl = {}
 	for i = 1,len do
-		table.insert(newtbl, {tblA[i], tblB[i]})
+		table.insert(newtbl, {tbl_a[i], tbl_b[i]})
 	end
 	return newtbl
 end
@@ -274,8 +274,8 @@ end
 -- e.g.:
 --   zip_with(fn.add, {1,2,3}, {1,2,3}) -> {2,4,6}
 --   zip_with(fn.add, {1,2,3}, {1,2,3,4}) -> {2,4,6}
-function fn.zip_with(func, tblA, tblB)
-	return fn.map(function(x) return func(unpack(x)) end, fn.zip(tblA, tblB))
+function fn.zip_with(func, tbl_a, tbl_b)
+	return fn.map(function(x) return func(unpack(x)) end, fn.zip(tbl_a, tbl_b))
 end
 
 

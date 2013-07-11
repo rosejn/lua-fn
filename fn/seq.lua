@@ -236,6 +236,22 @@ function seq.partition(n, s)
 end
 
 
+-- Returns a table with the elements of s grouped by the result of
+-- calling fn(elem).
+function seq.group_by(f, s)
+    return seq.reduce(
+      function(res, v)
+          local k = f(v)
+          if res[k] == nil then
+              res[k] = {}
+          end
+          fn.append(res[k], v)
+          return res
+      end,
+      {}, s)
+end
+
+
 -- Concatenate two or more sequences.
 function seq.concat(...)
     local args = seq.seq({...})

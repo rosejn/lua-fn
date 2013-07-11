@@ -47,11 +47,7 @@ function tests.test_fns()
 
 	do
 		local res = fn.zip_with(fn.add, {1,2,3}, {1,2,3})
-		tester:assertTableEq(res, {2,3,6}, "zip_with addition of tables of equal length")
-	end
-	do
-		local res = fn.zip_with(fn.add, {1,2,3,4}, {1,2,3})
-		tester:assertTableEq(res, {2,3,6}, "zip_with addition of tables of equal length")
+		tester:assertTableEq(res, {2,4,6}, "zip_with adding tables")
 	end
 end
 

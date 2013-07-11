@@ -114,10 +114,27 @@ end
 
 function tests.weave()
     local woven = seq.interleave({1,1,1,1}, {2,2,2,2})
+    print("woven: ")
+    print(seq.table(woven))
     tester:assertTableEq(seq.table(woven), {1,2,1,2,1,2,1,2}, "interleave 1's and 2's")
 
     local leaved = seq.interpose(",", {"foo", "bar", "baz"})
     tester:assertTableEq(seq.table(leaved), {"foo", ",", "bar", ",", "baz"}, "interpose commas")
 end
 
+
+function tests.group_by()
+    local is_even = function(v)
+        if (v % 2) == 0 then
+            return true
+        else
+            return false
+        end
+    end
+
+    local data = {1,2,3,4,5,6,7,8,9}
+    local res = seq.group_by(is_even, data)
+    tester:assertTableEq(res[true], {2,4,6,8}, "group_by evens")
+    tester:assertTableEq(res[false], {1,3,5,7,9}, "group_by false")
+end
 
